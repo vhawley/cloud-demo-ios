@@ -18,5 +18,6 @@ extension Grocery {
     @NSManaged var price: NSNumber?
     @NSManaged var purchased: NSNumber?
     @NSManaged var quantity: NSNumber?
+    @NSManaged var index: NSNumber?
 
 }
