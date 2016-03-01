@@ -15,10 +15,30 @@ class MainTableViewController: UITableViewController {
     
     var groceries: [Grocery] = []
     
+    func storesDidChange() {
+        print("NSPersistentStoreCoordinatorStoresDidChangeNotification")
+        let moContext = appDelegate.managedObjectContext
+        let fetchRequest = NSFetchRequest(entityName: "Grocery")
+        
+        do {
+            groceries = try moContext.executeFetchRequest(fetchRequest) as! [Grocery]
+        } catch {
+            print("Error: \(error)")
+        }
+    }
+    
+    func storesWillChange() {
+        print("NSPersistentStoreCoordinatorStoresWillChangeNotification")
+    }
+        
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        
         let moContext = appDelegate.managedObjectContext
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesDidChange", name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesWillChange", name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object: moContext.persistentStoreCoordinator)
         
         let fetchRequest = NSFetchRequest(entityName: "Grocery")
         
@@ -105,7 +125,7 @@ class MainTableViewController: UITableViewController {
     // Override to support editing the table view.
     override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
         if editingStyle == .Delete {
-            // Delete the row from the data source
+            groceries.removeAtIndex(indexPath.row)
             tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
         } else if editingStyle == .Insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
@@ -114,7 +134,9 @@ class MainTableViewController: UITableViewController {
 
     // Override to support rearranging the table view.
     override func tableView(tableView: UITableView, moveRowAtIndexPath fromIndexPath: NSIndexPath, toIndexPath: NSIndexPath) {
-
+        let g = groceries[fromIndexPath.row]
+        groceries.removeAtIndex(fromIndexPath.row)
+        groceries.insert(g, atIndex: toIndexPath.row)
     }
 
     /*
