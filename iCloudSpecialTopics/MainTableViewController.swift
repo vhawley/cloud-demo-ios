@@ -24,6 +24,7 @@ class MainTableViewController: UITableViewController {
         
         do {
             groceries = try moContext.executeFetchRequest(fetchRequest) as! [Grocery]
+            tableView.reloadData()
         } catch {
             print("Error: \(error)")
         }
@@ -36,7 +37,7 @@ class MainTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        self.navigationItem.leftBarButtonItem = self.editButtonItem()
         
         let moContext = appDelegate.managedObjectContext
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesDidChange", name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
@@ -53,7 +54,7 @@ class MainTableViewController: UITableViewController {
         }
         
         // Test code: add entity
-        let entity = NSEntityDescription.entityForName("Grocery", inManagedObjectContext: moContext)
+        /*let entity = NSEntityDescription.entityForName("Grocery", inManagedObjectContext: moContext)
         let testObject = NSManagedObject(entity: entity!, insertIntoManagedObjectContext: moContext) as! Grocery
         
         testObject.name = "Milk"
@@ -68,13 +69,19 @@ class MainTableViewController: UITableViewController {
             try moContext.save()
         } catch {
             print("Error: \(error)")
-        }
+        } */
         
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.reloadData()
+        print(groceries)
     }
 
     override func didReceiveMemoryWarning() {
@@ -104,14 +111,21 @@ class MainTableViewController: UITableViewController {
             
             let formatter = NSNumberFormatter()
             formatter.numberStyle = .CurrencyStyle
-            groceryCell.priceLabel.text = formatter.stringFromNumber(g.price!)
+            
+            if let p = g.price {
+                groceryCell.priceLabel.text = formatter.stringFromNumber(p)
+            }
             
             if let q = g.quantity {
+                groceryCell.quantityLabel.text = "Need: \(q)"
                 if let i = g.index {
                     groceryCell.quantityLabel.text = "Need: \(q) Index: \(i)"
                 }
             } else {
                 groceryCell.quantityLabel.text = ""
+                if let i = g.index {
+                    groceryCell.quantityLabel.text = "Index: \(i)"
+                }
             }
         }
 
@@ -181,14 +195,19 @@ class MainTableViewController: UITableViewController {
     }
     */
 
-    /*
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
+        if segue.identifier == "addSegue" {
+            if let nav = segue.destinationViewController as? UINavigationController {
+                if let addVC = nav.viewControllers[0] as? AddGroceryTableViewController {
+                    addVC.originVC = self
+                }
+            }
+        }
     }
-    */
 
 }
