@@ -55,9 +55,9 @@ class MainTableViewController: UITableViewController {
         
         let moContext = appDelegate.managedObjectContext
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesDidChange), name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesDidChange", name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesWillChange), name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object:moContext.persistentStoreCoordinator)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesWillChange", name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object:moContext.persistentStoreCoordinator)
         
         NSNotificationCenter.defaultCenter().addObserverForName(NSPersistentStoreDidImportUbiquitousContentChangesNotification, object: moContext.persistentStoreCoordinator, queue: NSOperationQueue.mainQueue(), usingBlock: {(note) in
             print("NSPersistentStoreDidImportUbiquitousContentChangesNotification")
@@ -138,14 +138,8 @@ class MainTableViewController: UITableViewController {
             
             if let q = g.quantity {
                 groceryCell.quantityLabel.text = "Need: \(q)"
-                if let i = g.index {
-                    groceryCell.quantityLabel.text = "Need: \(q) Index: \(i)"
-                }
             } else {
                 groceryCell.quantityLabel.text = ""
-                if let i = g.index {
-                    groceryCell.quantityLabel.text = "Index: \(i)"
-                }
             }
         }
 
