@@ -12,6 +12,7 @@ import CoreData
 class MainTableViewController: UITableViewController {
 
     let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+    let uiDisable = UIAlertController(title: "Groceries", message: "Updating data...", preferredStyle: .Alert)
     
     var groceries: [Grocery] = []
     
@@ -24,7 +25,10 @@ class MainTableViewController: UITableViewController {
         
         do {
             groceries = try moContext.executeFetchRequest(fetchRequest) as! [Grocery]
-            tableView.reloadData()
+            dispatch_async(dispatch_get_main_queue(), {
+                self.tableView.reloadData()
+                self.uiDisable.dismissViewControllerAnimated(true, completion: nil)
+            })
         } catch {
             print("Error: \(error)")
         }
@@ -32,16 +36,23 @@ class MainTableViewController: UITableViewController {
     
     func storesWillChange() {
         print("NSPersistentStoreCoordinatorStoresWillChangeNotification")
+        dispatch_async(dispatch_get_main_queue(), {
+            self.presentViewController(self.uiDisable, animated: true, completion: nil)
+        })
+        appDelegate.managedObjectContext.performBlock({
+            self.appDelegate.managedObjectContext.reset() //documentation structured this way
+        })
     }
         
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         self.navigationItem.leftBarButtonItem = self.editButtonItem()
         
         let moContext = appDelegate.managedObjectContext
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesDidChange", name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "storesWillChange", name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object: moContext.persistentStoreCoordinator)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesDidChange), name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesWillChange), name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object: moContext.persistentStoreCoordinator)
         
         let fetchRequest = NSFetchRequest(entityName: "Grocery")
         let sortDescriptor = NSSortDescriptor(key: "index", ascending: true)
@@ -152,7 +163,7 @@ class MainTableViewController: UITableViewController {
             do {
                 moContext.deleteObject(groceries[indexPath.row]) //delete from core data
                 groceries.removeAtIndex(indexPath.row) //delete from memory
-                for (var i = indexPath.row; i < groceries.count; i++) { //update indices of elements after deleted object
+                for i in indexPath.row ..< groceries.count { //update indices of elements after deleted object
                     groceries[i].index = i
                 }
                 tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
@@ -175,7 +186,7 @@ class MainTableViewController: UITableViewController {
         groceries.removeAtIndex(fromIndexPath.row)
         groceries.insert(g, atIndex: toIndexPath.row)
         
-        for (var i = min(fromIndexPath.row, toIndexPath.row); i <= max(fromIndexPath.row, toIndexPath.row); i++ ) {
+        for var i in min(fromIndexPath.row, toIndexPath.row)...max(fromIndexPath.row, toIndexPath.row) {
             groceries[i].index = i
         }
         

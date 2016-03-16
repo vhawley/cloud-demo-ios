@@ -34,10 +34,10 @@ class AddGroceryTableViewController: UITableViewController {
                 g.price = Double(priceTextView.text)
                 g.quantity = Int(quantityTextView.text)
                 g.purchased = purchasedSwitch.on
-                mainVC.groceries.append(g)
                 
                 do {
                     try moContext.save()
+                    mainVC.groceries.append(g)
                 } catch {
                     print("Error: \(error)")
                 }
