@@ -16,8 +16,7 @@ class MainTableViewController: UITableViewController {
     
     var groceries: [Grocery] = []
     
-    func storesDidChange() {
-        print("NSPersistentStoreCoordinatorStoresDidChangeNotification")
+    func fetchData() {
         let moContext = appDelegate.managedObjectContext
         let fetchRequest = NSFetchRequest(entityName: "Grocery")
         let sortDescriptor = NSSortDescriptor(key: "index", ascending: true)
@@ -27,11 +26,18 @@ class MainTableViewController: UITableViewController {
             groceries = try moContext.executeFetchRequest(fetchRequest) as! [Grocery]
             dispatch_async(dispatch_get_main_queue(), {
                 self.tableView.reloadData()
-                self.uiDisable.dismissViewControllerAnimated(true, completion: nil)
             })
         } catch {
             print("Error: \(error)")
         }
+
+    }
+    
+    
+    func storesDidChange() {
+        print("NSPersistentStoreCoordinatorStoresDidChangeNotification")
+        self.fetchData()
+        self.uiDisable.dismissViewControllerAnimated(true, completion: nil)
     }
     
     func storesWillChange() {
@@ -43,26 +49,29 @@ class MainTableViewController: UITableViewController {
             self.appDelegate.managedObjectContext.reset() //documentation structured this way
         })
     }
-        
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.navigationItem.leftBarButtonItem = self.editButtonItem()
-        
         let moContext = appDelegate.managedObjectContext
+        
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesDidChange), name: NSPersistentStoreCoordinatorStoresDidChangeNotification, object: moContext.persistentStoreCoordinator)
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesWillChange), name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object: moContext.persistentStoreCoordinator)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(MainTableViewController.storesWillChange), name: NSPersistentStoreCoordinatorStoresWillChangeNotification, object:moContext.persistentStoreCoordinator)
         
-        let fetchRequest = NSFetchRequest(entityName: "Grocery")
-        let sortDescriptor = NSSortDescriptor(key: "index", ascending: true)
-        fetchRequest.sortDescriptors = [sortDescriptor]
+        NSNotificationCenter.defaultCenter().addObserverForName(NSPersistentStoreDidImportUbiquitousContentChangesNotification, object: moContext.persistentStoreCoordinator, queue: NSOperationQueue.mainQueue(), usingBlock: {(note) in
+            print("NSPersistentStoreDidImportUbiquitousContentChangesNotification")
+            
+            self.fetchData()
+            moContext.performBlock({
+                moContext.mergeChangesFromContextDidSaveNotification(note)
+            })
+        })
         
-        do {
-            groceries = try moContext.executeFetchRequest(fetchRequest) as! [Grocery]
-        } catch {
-            print("Error: \(error)")
-        }
+        self.navigationItem.leftBarButtonItem = self.editButtonItem()
+        
+        
+        self.fetchData()
         
         // Test code: add entity
         /*let entity = NSEntityDescription.entityForName("Grocery", inManagedObjectContext: moContext)
